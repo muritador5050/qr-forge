@@ -1,0 +1,282 @@
+// Home.tsx
+import React, { useState, useRef, useEffect } from 'react';
+import {
+  Box,
+  Container,
+  Grid,
+  GridItem,
+  VStack,
+  useColorMode,
+  useColorModeValue,
+  useToast,
+  useDisclosure,
+} from '@chakra-ui/react';
+import { Type, Link, Mail, Phone, Wifi, User } from 'lucide-react';
+import ContentTypeSelector from '../components/ContentTypeSelector';
+import ContentInput from '../components/ContentInput';
+import QRCodeDisplay from '../components/QrCodeDisplay';
+import SettingsPanel from '../components/SettingsPanel';
+import HistoryPanel from '../components/HistoryPanel';
+import ActionButtons from '../components/ActionButtons';
+import InfoPanel from '../components/InfoPanel';
+import Footer from '../components/Footer';
+import { InputType, QRHistoryItem, InputTypeOption } from '../types/index';
+import Header from '../components/Header';
+
+const Home: React.FC = () => {
+  const { colorMode, toggleColorMode } = useColorMode();
+  const toast = useToast();
+  const emptyQrBgColor = useColorModeValue('gray.50', 'gray.700');
+
+  // Color mode values
+  const bgColor = useColorModeValue('gray.50', 'gray.900');
+  const cardBg = useColorModeValue('white', 'gray.800');
+  const borderColor = useColorModeValue('gray.200', 'gray.600');
+  const textColor = useColorModeValue('gray.900', 'white');
+  const mutedColor = useColorModeValue('gray.600', 'gray.400');
+  const hoverBgColor = useColorModeValue('gray.50', 'gray.700');
+
+  // Disclosure hooks for collapsible sections
+  const { isOpen: isSettingsOpen, onToggle: toggleSettings } = useDisclosure();
+  const { isOpen: isHistoryOpen, onToggle: toggleHistory } = useDisclosure();
+
+  // State management
+  const [inputType, setInputType] = useState<InputType>('text');
+  const [inputValue, setInputValue] = useState('');
+  const [qrSize, setQrSize] = useState(256);
+  const [fgColor, setFgColor] = useState('#000000');
+  const [bgColorQR, setBgColorQR] = useState('#ffffff');
+  const [errorLevel, setErrorLevel] = useState('M');
+  const [history, setHistory] = useState<QRHistoryItem[]>([]);
+  const qrRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Note: localStorage is not available in Claude artifacts
+    // In a real application, you would load from localStorage here
+    const savedHistory: QRHistoryItem[] = [];
+    setHistory(savedHistory);
+  }, []);
+
+  const showNotification = (
+    message: string,
+    status: 'success' | 'warning' | 'error' = 'success'
+  ) => {
+    toast({
+      title: message,
+      status: status,
+      duration: 3000,
+      isClosable: true,
+      position: 'top-right',
+    });
+  };
+
+  const generateQRValue = (): string => {
+    switch (inputType) {
+      case 'url':
+        return inputValue.startsWith('http')
+          ? inputValue
+          : `https://${inputValue}`;
+      case 'email':
+        return `mailto:${inputValue}`;
+      case 'phone':
+        return `tel:${inputValue}`;
+      case 'wifi':
+        const [ssid, password, security] = inputValue.split('|');
+        return `WIFI:T:${security || 'WPA'};S:${ssid};P:${password};;`;
+      case 'vcard':
+        const [name, phone, email] = inputValue.split('|');
+        return `BEGIN:VCARD\\nVERSION:3.0\\nFN:${name}\\nTEL:${phone}\\nEMAIL:${email}\\nEND:VCARD`;
+      default:
+        return inputValue;
+    }
+  };
+
+  const saveToHistory = () => {
+    if (!inputValue.trim()) return;
+
+    const newItem: QRHistoryItem = {
+      id: Date.now(),
+      type: inputType,
+      value: inputValue,
+      qrValue: generateQRValue(),
+      timestamp: new Date().toLocaleString(),
+      settings: { qrSize, fgColor, bgColor: bgColorQR, errorLevel },
+    };
+
+    const updatedHistory = [newItem, ...history.slice(0, 9)];
+    setHistory(updatedHistory);
+    // Note: localStorage would be used here in a real application
+  };
+
+  const downloadQR = (format: string) => {
+    if (!inputValue.trim()) {
+      showNotification('Please enter some content first!', 'warning');
+      return;
+    }
+
+    saveToHistory();
+
+    const canvas = qrRef.current?.querySelector('canvas');
+    if (canvas) {
+      const link = document.createElement('a');
+      link.download = `qrcode-${Date.now()}.${format}`;
+      link.href = canvas.toDataURL(`image/${format}`);
+      link.click();
+      showNotification('QR Code downloaded successfully!');
+    }
+  };
+
+  const copyToClipboard = async () => {
+    if (!inputValue.trim()) {
+      showNotification('Please enter some content first!', 'warning');
+      return;
+    }
+
+    try {
+      const canvas = qrRef.current?.querySelector('canvas');
+      if (canvas) {
+        canvas.toBlob(async (blob) => {
+          if (blob) {
+            await navigator.clipboard.write([
+              new ClipboardItem({ 'image/png': blob }),
+            ]);
+            showNotification('QR Code copied to clipboard!');
+          }
+        });
+      }
+    } catch (err) {
+      showNotification('Copy failed. Please try download instead.', 'error');
+    }
+  };
+
+  const clearHistory = () => {
+    setHistory([]);
+    showNotification('History cleared!');
+  };
+
+  const loadFromHistory = (item: QRHistoryItem) => {
+    setInputType(item.type);
+    setInputValue(item.value);
+    setQrSize(item.settings.qrSize);
+    setFgColor(item.settings.fgColor);
+    setBgColorQR(item.settings.bgColor);
+    setErrorLevel(item.settings.errorLevel);
+    showNotification('Loaded from history!');
+  };
+
+  const getPlaceholder = (): string => {
+    switch (inputType) {
+      case 'url':
+        return 'Enter URL (e.g., google.com)';
+      case 'email':
+        return 'Enter email address';
+      case 'phone':
+        return 'Enter phone number';
+      case 'wifi':
+        return 'Format: NetworkName|Password|Security';
+      case 'vcard':
+        return 'Format: Name|Phone|Email';
+      default:
+        return 'Enter any text';
+    }
+  };
+
+  const inputTypes: InputTypeOption[] = [
+    { value: 'text', label: 'Text', icon: Type },
+    { value: 'url', label: 'URL', icon: Link },
+    { value: 'email', label: 'Email', icon: Mail },
+    { value: 'phone', label: 'Phone', icon: Phone },
+    { value: 'wifi', label: 'WiFi', icon: Wifi },
+    { value: 'vcard', label: 'Contact', icon: User },
+  ];
+
+  return (
+    <Box bg={bgColor} minH='100vh'>
+      <Header
+        colorMode={colorMode}
+        onToggleColorMode={toggleColorMode}
+        onToggleHistory={toggleHistory}
+        onToggleSettings={toggleSettings}
+        isHistoryOpen={isHistoryOpen}
+        isSettingsOpen={isSettingsOpen}
+      />
+
+      <Container maxW='7xl' py={8}>
+        <Grid templateColumns={{ base: '1fr', lg: '1fr 1fr' }} gap={8}>
+          {/* Left Panel - Input & Controls */}
+          <GridItem>
+            <VStack spacing={6} align='stretch'>
+              <ContentTypeSelector
+                inputType={inputType}
+                onInputTypeChange={setInputType}
+                inputTypes={inputTypes}
+              />
+
+              <ContentInput
+                inputValue={inputValue}
+                onInputValueChange={setInputValue}
+                inputType={inputType}
+                placeholder={getPlaceholder()}
+              />
+
+              <SettingsPanel
+                isOpen={isSettingsOpen}
+                qrSize={qrSize}
+                onQrSizeChange={setQrSize}
+                fgColor={fgColor}
+                onFgColorChange={setFgColor}
+                bgColorQR={bgColorQR}
+                onBgColorQRChange={setBgColorQR}
+                errorLevel={errorLevel}
+                onErrorLevelChange={setErrorLevel}
+              />
+
+              <HistoryPanel
+                isOpen={isHistoryOpen}
+                history={history}
+                onClearHistory={clearHistory}
+                onLoadFromHistory={loadFromHistory}
+                hoverBgColor={hoverBgColor}
+                mutedColor={mutedColor}
+              />
+            </VStack>
+          </GridItem>
+
+          {/* Right Panel - QR Code Display & Actions */}
+          <GridItem>
+            <VStack spacing={6} align='stretch'>
+              <QRCodeDisplay
+                inputValue={inputValue}
+                qrValue={generateQRValue()}
+                qrSize={qrSize}
+                fgColor={fgColor}
+                bgColorQR={bgColorQR}
+                errorLevel={errorLevel}
+                emptyQrBgColor={emptyQrBgColor}
+                borderColor={borderColor}
+                mutedColor={mutedColor}
+                qrRef={qrRef}
+              />
+
+              <ActionButtons
+                inputValue={inputValue}
+                onDownloadQR={downloadQR}
+                onCopyToClipboard={copyToClipboard}
+              />
+
+              <InfoPanel mutedColor={mutedColor} />
+            </VStack>
+          </GridItem>
+        </Grid>
+      </Container>
+
+      <Footer
+        borderColor={borderColor}
+        cardBg={cardBg}
+        mutedColor={mutedColor}
+      />
+    </Box>
+  );
+};
+
+export default Home;
