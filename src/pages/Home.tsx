@@ -52,6 +52,7 @@ const Home: React.FC = () => {
   const [selectedHistoryItem, setSelectedHistoryItem] =
     useState<QRHistoryItem | null>(null);
   const [qrSize, setQrSize] = useState(256);
+  const [marginSize, setMarginSize] = useState(4);
   const [fgColor, setFgColor] = useState('#000000');
   const [bgColorQR, setBgColorQR] = useState('#ffffff');
   const [errorLevel, setErrorLevel] = useState('M');
@@ -125,7 +126,7 @@ const Home: React.FC = () => {
       value: inputValue,
       qrValue: generateQRValue(),
       timestamp: new Date().toLocaleString(),
-      settings: { qrSize, fgColor, bgColor: bgColorQR, errorLevel },
+      settings: { qrSize, marginSize, fgColor, bgColor: bgColorQR, errorLevel },
     };
 
     const updatedHistory = [newItem, ...history.slice(0, 9)];
@@ -171,6 +172,78 @@ const Home: React.FC = () => {
       }
     } catch (err) {
       showNotification('Copy failed. Please try download instead.', 'error');
+    }
+  };
+
+  const printQR = () => {
+    if (!inputValue.trim()) {
+      showNotification('Please enter some content first!', 'warning');
+      return;
+    }
+
+    const canvas = qrRef.current?.querySelector('canvas');
+    if (canvas) {
+      // Create a new window for printing
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        const dataUrl = canvas.toDataURL('image/png');
+
+        printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>QR Code Print</title>
+            <style>
+              body {
+                margin: 0;
+                padding: 20px;
+                text-align: center;
+                font-family: Arial, sans-serif;
+              }
+              .qr-container {
+                page-break-inside: avoid;
+                margin: 20px auto;
+              }
+              .qr-code {
+                max-width: 100%;
+                height: auto;
+              }
+              .qr-info {
+                margin-top: 20px;
+                font-size: 14px;
+                color: #666;
+              }
+              @media print {
+                body { margin: 0; }
+                .no-print { display: none; }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="qr-container">
+              <h2>QR Code</h2>
+              <img src="${dataUrl}" alt="QR Code" class="qr-code" />
+              <div class="qr-info">
+                <p><strong>Type:</strong> ${inputType.toUpperCase()}</p>
+                <p><strong>Content:</strong> ${inputValue}</p>
+                <p><strong>Generated:</strong> ${new Date().toLocaleString()}</p>
+              </div>
+            </div>
+            <script>
+              window.onload = function() {
+                window.print();
+                window.onafterprint = function() {
+                  window.close();
+                };
+              };
+            </script>
+          </body>
+        </html>
+      `);
+
+        printWindow.document.close();
+        showNotification('Print dialog opened!');
+      }
     }
   };
 
@@ -248,6 +321,8 @@ const Home: React.FC = () => {
               <SettingsPanel
                 isOpen={isSettingsOpen}
                 qrSize={qrSize}
+                marginSize={marginSize}
+                onMarginSizeChange={setMarginSize}
                 onQrSizeChange={setQrSize}
                 fgColor={fgColor}
                 onFgColorChange={setFgColor}
@@ -276,6 +351,7 @@ const Home: React.FC = () => {
                 inputValue={inputValue}
                 qrValue={generateQRValue()}
                 qrSize={qrSize}
+                marginSize={marginSize}
                 fgColor={fgColor}
                 bgColorQR={bgColorQR}
                 errorLevel={errorLevel}
@@ -289,6 +365,7 @@ const Home: React.FC = () => {
                 inputValue={inputValue}
                 onDownloadQR={downloadQR}
                 onCopyToClipboard={copyToClipboard}
+                onPrintQR={printQR}
               />
 
               <InfoPanel mutedColor={mutedColor} />
