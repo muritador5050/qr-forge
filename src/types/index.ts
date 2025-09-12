@@ -13,6 +13,10 @@ export interface QRHistoryItem {
     fgColor: string;
     bgColor: string;
     errorLevel: string;
+    logo?: string;
+    logoSize: number;
+    customText?: string;
+    showCustomText: boolean;
   };
 }
 

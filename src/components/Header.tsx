@@ -54,7 +54,11 @@ const Header: React.FC<HeaderProps> = ({
                 QR
               </Text>
             </Box>
-            <Heading size='lg' color='textColor'>
+            <Heading
+              display={{ base: 'none', md: 'flex' }}
+              size='lg'
+              color='textColor'
+            >
               QR Code Generator Pro
             </Heading>
           </HStack>

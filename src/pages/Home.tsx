@@ -51,11 +51,15 @@ const Home: React.FC = () => {
   const [inputValue, setInputValue] = useState('');
   const [selectedHistoryItem, setSelectedHistoryItem] =
     useState<QRHistoryItem | null>(null);
+  const [logo, setLogo] = useState<string | undefined>();
+  const [logoSize, setLogoSize] = useState(20); // 20% of QR code size
+  const [customText, setCustomText] = useState<string>('');
+  const [showCustomText, setShowCustomText] = useState(false);
   const [qrSize, setQrSize] = useState(256);
   const [marginSize, setMarginSize] = useState(4);
   const [fgColor, setFgColor] = useState('#000000');
   const [bgColorQR, setBgColorQR] = useState('#ffffff');
-  const [errorLevel, setErrorLevel] = useState('M');
+  const [errorLevel, setErrorLevel] = useState('H');
   const [history, setHistory] = useState<QRHistoryItem[]>([]);
   const qrRef = useRef<HTMLDivElement>(null);
 
@@ -70,6 +74,19 @@ const Home: React.FC = () => {
       }
     }
   }, []);
+
+  const handleReset = () => {
+    setCustomText('');
+    setShowCustomText(false);
+    setFgColor('#000000');
+    setBgColorQR('#ffffff');
+    setQrSize(256);
+    setMarginSize(4);
+    setErrorLevel('H');
+    setLogo(undefined);
+    setLogoSize(20);
+    showNotification('Settings reset to defaults!');
+  };
 
   const showNotification = (
     message: string,
@@ -126,7 +143,17 @@ const Home: React.FC = () => {
       value: inputValue,
       qrValue: generateQRValue(),
       timestamp: new Date().toLocaleString(),
-      settings: { qrSize, marginSize, fgColor, bgColor: bgColorQR, errorLevel },
+      settings: {
+        qrSize,
+        marginSize,
+        fgColor,
+        bgColor: bgColorQR,
+        errorLevel,
+        logo,
+        logoSize,
+        customText,
+        showCustomText,
+      },
     };
 
     const updatedHistory = [newItem, ...history.slice(0, 9)];
@@ -134,7 +161,7 @@ const Home: React.FC = () => {
     localStorage.setItem('qrHistory', JSON.stringify(updatedHistory));
   };
 
-  const downloadQR = (format: string) => {
+  const downloadQR = async (format: string) => {
     if (!inputValue.trim()) {
       showNotification('Please enter some content first!', 'warning');
       return;
@@ -142,11 +169,34 @@ const Home: React.FC = () => {
 
     saveToHistory();
 
-    const canvas = qrRef.current?.querySelector('canvas');
-    if (canvas) {
+    const finalCanvas = document.createElement('canvas');
+    const finalCtx = finalCanvas.getContext('2d');
+
+    if (!finalCtx) return;
+
+    const textHeight = showCustomText && customText ? 60 : 0;
+    const padding = 20;
+
+    finalCanvas.width = qrSize + padding * 2;
+    finalCanvas.height = qrSize + textHeight + padding * 2;
+
+    finalCtx.fillStyle = bgColorQR;
+    finalCtx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+
+    if (showCustomText && customText) {
+      finalCtx.fillStyle = fgColor;
+      finalCtx.font = 'bold 16px Arial';
+      finalCtx.textAlign = 'center';
+      finalCtx.fillText(customText, finalCanvas.width / 2, padding + 30);
+    }
+
+    const qrCanvas = qrRef.current?.querySelector('canvas');
+    if (qrCanvas) {
+      finalCtx.drawImage(qrCanvas, padding, padding + textHeight);
+
       const link = document.createElement('a');
       link.download = `qrcode-${Date.now()}.${format}`;
-      link.href = canvas.toDataURL(`image/${format}`);
+      link.href = finalCanvas.toDataURL(`image/${format}`);
       link.click();
       showNotification('QR Code downloaded successfully!');
     }
@@ -159,9 +209,38 @@ const Home: React.FC = () => {
     }
 
     try {
-      const canvas = qrRef.current?.querySelector('canvas');
-      if (canvas) {
-        canvas.toBlob(async (blob) => {
+      const finalCanvas = document.createElement('canvas');
+      const finalCtx = finalCanvas.getContext('2d');
+
+      if (!finalCtx) {
+        throw new Error('Could not get canvas context');
+      }
+
+      const textHeight = showCustomText && customText ? 60 : 0;
+      const padding = 20;
+
+      finalCanvas.width = qrSize + padding * 2;
+      finalCanvas.height = qrSize + textHeight + padding * 2;
+
+      // Fill background
+      finalCtx.fillStyle = bgColorQR;
+      finalCtx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+
+      // Draw custom text if enabled
+      if (showCustomText && customText) {
+        finalCtx.fillStyle = fgColor;
+        finalCtx.font = 'bold 16px Arial';
+        finalCtx.textAlign = 'center';
+        finalCtx.fillText(customText, finalCanvas.width / 2, padding + 30);
+      }
+
+      // Get the QR canvas and draw it
+      const qrCanvas = qrRef.current?.querySelector('canvas');
+      if (qrCanvas) {
+        finalCtx.drawImage(qrCanvas, padding, padding + textHeight);
+
+        // Convert to blob and copy
+        finalCanvas.toBlob(async (blob) => {
           if (blob) {
             await navigator.clipboard.write([
               new ClipboardItem({ 'image/png': blob }),
@@ -169,6 +248,8 @@ const Home: React.FC = () => {
             showNotification('QR Code copied to clipboard!');
           }
         });
+      } else {
+        throw new Error('QR Code canvas not found');
       }
     } catch (err) {
       showNotification('Copy failed. Please try download instead.', 'error');
@@ -181,13 +262,40 @@ const Home: React.FC = () => {
       return;
     }
 
-    const canvas = qrRef.current?.querySelector('canvas');
-    if (canvas) {
-      // Create a new window for printing
+    // Create the same combined canvas as download function
+    const finalCanvas = document.createElement('canvas');
+    const finalCtx = finalCanvas.getContext('2d');
+
+    if (!finalCtx) return;
+
+    const textHeight = showCustomText && customText ? 60 : 0;
+    const padding = 20;
+
+    finalCanvas.width = qrSize + padding * 2;
+    finalCanvas.height = qrSize + textHeight + padding * 2;
+
+    // Fill background
+    finalCtx.fillStyle = bgColorQR;
+    finalCtx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+
+    // Draw custom text if enabled
+    if (showCustomText && customText) {
+      finalCtx.fillStyle = fgColor;
+      finalCtx.font = 'bold 16px Arial';
+      finalCtx.textAlign = 'center';
+      finalCtx.fillText(customText, finalCanvas.width / 2, padding + 30);
+    }
+
+    // Get the QR canvas and draw it
+    const qrCanvas = qrRef.current?.querySelector('canvas');
+    if (qrCanvas) {
+      finalCtx.drawImage(qrCanvas, padding, padding + textHeight);
+
+      const dataUrl = finalCanvas.toDataURL('image/png');
+
+      // Create print window
       const printWindow = window.open('', '_blank');
       if (printWindow) {
-        const dataUrl = canvas.toDataURL('image/png');
-
         printWindow.document.write(`
         <!DOCTYPE html>
         <html>
@@ -207,11 +315,18 @@ const Home: React.FC = () => {
               .qr-code {
                 max-width: 100%;
                 height: auto;
+                border: 1px solid #ddd;
               }
               .qr-info {
                 margin-top: 20px;
                 font-size: 14px;
                 color: #666;
+              }
+              .custom-text {
+                font-size: 18px;
+                font-weight: bold;
+                margin-bottom: 10px;
+                color: #333;
               }
               @media print {
                 body { margin: 0; }
@@ -221,7 +336,11 @@ const Home: React.FC = () => {
           </head>
           <body>
             <div class="qr-container">
-              <h2>QR Code</h2>
+              ${
+                showCustomText && customText
+                  ? `<div class="custom-text">${customText}</div>`
+                  : ''
+              }
               <img src="${dataUrl}" alt="QR Code" class="qr-code" />
               <div class="qr-info">
                 <p><strong>Type:</strong> ${inputType.toUpperCase()}</p>
@@ -290,7 +409,7 @@ const Home: React.FC = () => {
   ];
 
   return (
-    <Box bg={bgColor} minH='100vh'>
+    <Box border='3px solid red' bg={bgColor} minH='100vh'>
       <Header
         colorMode={colorMode}
         onToggleColorMode={toggleColorMode}
@@ -330,6 +449,15 @@ const Home: React.FC = () => {
                 onBgColorQRChange={setBgColorQR}
                 errorLevel={errorLevel}
                 onErrorLevelChange={setErrorLevel}
+                logo={logo}
+                onLogoChange={setLogo}
+                logoSize={logoSize}
+                onLogoSizeChange={setLogoSize}
+                customText={customText}
+                onCustomTextChange={setCustomText}
+                showCustomText={showCustomText}
+                onShowCustomTextChange={setShowCustomText}
+                onReset={handleReset}
               />
 
               <HistoryPanel
@@ -359,6 +487,10 @@ const Home: React.FC = () => {
                 borderColor={borderColor}
                 mutedColor={mutedColor}
                 qrRef={qrRef}
+                logo={logo}
+                logoSize={logoSize}
+                customText={customText}
+                showCustomText={showCustomText}
               />
 
               <ActionButtons

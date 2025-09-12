@@ -1,4 +1,3 @@
-// components/SettingsPanel.tsx
 import React from 'react';
 import {
   Card,
@@ -18,8 +17,12 @@ import {
   HStack,
   Text,
   Collapse,
+  Box,
+  Textarea,
+  Switch,
+  Button,
 } from '@chakra-ui/react';
-import { Palette } from 'lucide-react';
+import { Palette, Upload, Type, Image } from 'lucide-react';
 
 interface SettingsPanelProps {
   isOpen: boolean;
@@ -33,6 +36,15 @@ interface SettingsPanelProps {
   onErrorLevelChange: (level: string) => void;
   marginSize: number;
   onMarginSizeChange: (size: number) => void;
+  logo?: string;
+  onLogoChange: (logo: string | undefined) => void;
+  logoSize: number;
+  onLogoSizeChange: (size: number) => void;
+  customText?: string;
+  onCustomTextChange: (text: string) => void;
+  showCustomText: boolean;
+  onShowCustomTextChange: (show: boolean) => void;
+  onReset: () => void;
 }
 
 const SettingsPanel: React.FC<SettingsPanelProps> = ({
@@ -47,17 +59,36 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onErrorLevelChange,
   marginSize,
   onMarginSizeChange,
+  logo,
+  onLogoChange,
+  logoSize,
+  onLogoSizeChange,
+  customText,
+  onCustomTextChange,
+  showCustomText,
+  onShowCustomTextChange,
+  onReset,
 }) => {
   return (
     <Collapse in={isOpen}>
       <Card bg='cardBg' borderColor='borderColor'>
         <CardHeader pb={4}>
-          <Heading size='md'>
-            <HStack>
-              <Palette size={20} />
-              <Text>Customization</Text>
-            </HStack>
-          </Heading>
+          <HStack justify='space-between'>
+            <Heading size='md'>
+              <HStack>
+                <Palette size={20} />
+                <Text>Customization</Text>
+              </HStack>
+            </Heading>
+            <Button
+              size='sm'
+              variant='ghost'
+              colorScheme='red'
+              onClick={onReset}
+            >
+              Reset
+            </Button>
+          </HStack>
         </CardHeader>
         <CardBody pt={0}>
           <VStack spacing={6} align='stretch'>
@@ -94,6 +125,111 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
                   </SliderTrack>
                   <SliderThumb />
                 </Slider>
+              </FormControl>
+
+              {/* Logo Upload Section */}
+              <FormControl>
+                <FormLabel>
+                  <HStack>
+                    <Image size={16} />
+                    <Text>Logo</Text>
+                  </HStack>
+                </FormLabel>
+                <VStack spacing={3} align='stretch'>
+                  <Input
+                    type='file'
+                    accept='image/*'
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          onLogoChange(event.target?.result as string);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    size='sm'
+                  />
+
+                  {logo && (
+                    <>
+                      <HStack>
+                        <Box
+                          w={8}
+                          h={8}
+                          border='1px'
+                          borderColor='gray.300'
+                          borderRadius='md'
+                          overflow='hidden'
+                        >
+                          <img
+                            src={logo}
+                            alt='Logo preview'
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                            }}
+                          />
+                        </Box>
+                        <Button
+                          size='xs'
+                          colorScheme='red'
+                          variant='ghost'
+                          onClick={() => onLogoChange(undefined)}
+                        >
+                          Remove
+                        </Button>
+                      </HStack>
+
+                      <FormControl>
+                        <FormLabel fontSize='sm'>
+                          Logo Size: {logoSize}%
+                        </FormLabel>
+                        <Slider
+                          value={logoSize}
+                          onChange={onLogoSizeChange}
+                          min={10}
+                          max={20}
+                          colorScheme='blue'
+                        >
+                          <SliderTrack>
+                            <SliderFilledTrack />
+                          </SliderTrack>
+                          <SliderThumb />
+                        </Slider>
+                      </FormControl>
+                    </>
+                  )}
+                </VStack>
+              </FormControl>
+
+              {/* Custom Text Section */}
+              <FormControl>
+                <FormLabel>
+                  <HStack justify='space-between' w='full'>
+                    <HStack>
+                      <Type size={16} />
+                      <Text>Custom Text</Text>
+                    </HStack>
+                    <Switch
+                      isChecked={showCustomText}
+                      onChange={(e) => onShowCustomTextChange(e.target.checked)}
+                      size='sm'
+                    />
+                  </HStack>
+                </FormLabel>
+
+                {showCustomText && (
+                  <Textarea
+                    value={customText || ''}
+                    onChange={(e) => onCustomTextChange(e.target.value)}
+                    placeholder="e.g., 'WiFi Password', 'Our Website', 'Contact Info'"
+                    size='sm'
+                    rows={2}
+                  />
+                )}
               </FormControl>
             </SimpleGrid>
 
