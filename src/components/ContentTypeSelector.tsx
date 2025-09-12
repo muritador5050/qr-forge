@@ -1,4 +1,3 @@
-// components/ContentTypeSelector.tsx
 import React from 'react';
 import {
   Card,
@@ -8,11 +7,11 @@ import {
   SimpleGrid,
   Button,
 } from '@chakra-ui/react';
-import { InputTypeOption } from '../types';
+import { InputType, InputTypeOption } from '../types';
 
 interface ContentTypeSelectorProps {
   inputType: string;
-  onInputTypeChange: (type: string) => void;
+  onInputTypeChange: (type: InputType) => void;
   inputTypes: InputTypeOption[];
 }
 

@@ -31,6 +31,8 @@ interface SettingsPanelProps {
   onBgColorQRChange: (color: string) => void;
   errorLevel: string;
   onErrorLevelChange: (level: string) => void;
+  marginSize: number;
+  onMarginSizeChange: (size: number) => void;
 }
 
 const SettingsPanel: React.FC<SettingsPanelProps> = ({
@@ -43,6 +45,8 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
   onBgColorQRChange,
   errorLevel,
   onErrorLevelChange,
+  marginSize,
+  onMarginSizeChange,
 }) => {
   return (
     <Collapse in={isOpen}>
@@ -57,22 +61,41 @@ const SettingsPanel: React.FC<SettingsPanelProps> = ({
         </CardHeader>
         <CardBody pt={0}>
           <VStack spacing={6} align='stretch'>
-            {/* Size Slider */}
-            <FormControl>
-              <FormLabel>Size: {qrSize}px</FormLabel>
-              <Slider
-                value={qrSize}
-                onChange={onQrSizeChange}
-                min={128}
-                max={512}
-                colorScheme='blue'
-              >
-                <SliderTrack>
-                  <SliderFilledTrack />
-                </SliderTrack>
-                <SliderThumb />
-              </Slider>
-            </FormControl>
+            {/* Size and Margin Sliders */}
+            <SimpleGrid columns={1} spacing={4}>
+              <FormControl>
+                <FormLabel>Size: {qrSize}px</FormLabel>
+                <Slider
+                  value={qrSize}
+                  onChange={onQrSizeChange}
+                  min={128}
+                  max={512}
+                  colorScheme='blue'
+                >
+                  <SliderTrack>
+                    <SliderFilledTrack />
+                  </SliderTrack>
+                  <SliderThumb />
+                </Slider>
+              </FormControl>
+
+              {/* Add this new margin control */}
+              <FormControl>
+                <FormLabel>Margin: {marginSize} modules</FormLabel>
+                <Slider
+                  value={marginSize}
+                  onChange={onMarginSizeChange}
+                  min={0}
+                  max={8}
+                  colorScheme='blue'
+                >
+                  <SliderTrack>
+                    <SliderFilledTrack />
+                  </SliderTrack>
+                  <SliderThumb />
+                </Slider>
+              </FormControl>
+            </SimpleGrid>
 
             {/* Colors */}
             <SimpleGrid columns={2} spacing={4}>

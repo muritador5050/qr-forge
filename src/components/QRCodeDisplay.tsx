@@ -12,11 +12,13 @@ import {
 } from '@chakra-ui/react';
 import { QRCodeCanvas } from 'qrcode.react';
 import { FileText } from 'lucide-react';
+import { ErrorCorrectionLevel } from '../types';
 
 interface QRCodeDisplayProps {
   inputValue: string;
   qrValue: string;
   qrSize: number;
+  marginSize: number;
   fgColor: string;
   bgColorQR: string;
   errorLevel: string;
@@ -30,6 +32,7 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
   inputValue,
   qrValue,
   qrSize,
+  marginSize,
   fgColor,
   bgColorQR,
   errorLevel,
@@ -52,8 +55,8 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
                 size={qrSize}
                 fgColor={fgColor}
                 bgColor={bgColorQR}
-                level={errorLevel}
-                includeMargin={true}
+                level={errorLevel as ErrorCorrectionLevel}
+                marginSize={marginSize}
               />
             ) : (
               <Center

@@ -1,4 +1,3 @@
-// components/HistoryPanel.tsx
 import React from 'react';
 import {
   Card,
@@ -20,7 +19,8 @@ interface HistoryPanelProps {
   isOpen: boolean;
   history: QRHistoryItem[];
   onClearHistory: () => void;
-  onLoadFromHistory: (item: QRHistoryItem) => void;
+  onSelectHistoryItem: (item: QRHistoryItem) => void;
+  onDeleteHistoryItem?: (id: number) => void;
   hoverBgColor: string;
   mutedColor: string;
 }
@@ -29,7 +29,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({
   isOpen,
   history,
   onClearHistory,
-  onLoadFromHistory,
+  onSelectHistoryItem,
   hoverBgColor,
   mutedColor,
 }) => {
@@ -68,7 +68,7 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({
                   key={item.id}
                   w='full'
                   cursor='pointer'
-                  onClick={() => onLoadFromHistory(item)}
+                  onClick={() => onSelectHistoryItem(item)}
                   _hover={{ bg: hoverBgColor }}
                   variant='outline'
                 >

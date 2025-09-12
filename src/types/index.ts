@@ -1,4 +1,4 @@
-// types.ts
+export type ErrorCorrectionLevel = 'L' | 'M' | 'Q' | 'H';
 export type InputType = 'text' | 'url' | 'email' | 'phone' | 'wifi' | 'vcard';
 
 export interface QRHistoryItem {
@@ -9,6 +9,7 @@ export interface QRHistoryItem {
   timestamp: string;
   settings: {
     qrSize: number;
+    marginSize: number;
     fgColor: string;
     bgColor: string;
     errorLevel: string;

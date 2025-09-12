@@ -22,6 +22,7 @@ import InfoPanel from '../components/InfoPanel';
 import Footer from '../components/Footer';
 import { InputType, QRHistoryItem, InputTypeOption } from '../types/index';
 import Header from '../components/Header';
+import HistoryModal from '../components/HistoryModal';
 
 const Home: React.FC = () => {
   const { colorMode, toggleColorMode } = useColorMode();
@@ -39,10 +40,17 @@ const Home: React.FC = () => {
   // Disclosure hooks for collapsible sections
   const { isOpen: isSettingsOpen, onToggle: toggleSettings } = useDisclosure();
   const { isOpen: isHistoryOpen, onToggle: toggleHistory } = useDisclosure();
+  const {
+    isOpen: isHistoryModalOpen,
+    onOpen: openHistoryModal,
+    onClose: closeHistoryModal,
+  } = useDisclosure();
 
   // State management
   const [inputType, setInputType] = useState<InputType>('text');
   const [inputValue, setInputValue] = useState('');
+  const [selectedHistoryItem, setSelectedHistoryItem] =
+    useState<QRHistoryItem | null>(null);
   const [qrSize, setQrSize] = useState(256);
   const [fgColor, setFgColor] = useState('#000000');
   const [bgColorQR, setBgColorQR] = useState('#ffffff');
@@ -51,10 +59,15 @@ const Home: React.FC = () => {
   const qrRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Note: localStorage is not available in Claude artifacts
-    // In a real application, you would load from localStorage here
-    const savedHistory: QRHistoryItem[] = [];
-    setHistory(savedHistory);
+    const savedHistory = localStorage.getItem('qrHistory');
+    if (savedHistory) {
+      try {
+        const parsedHistory: QRHistoryItem[] = JSON.parse(savedHistory);
+        setHistory(parsedHistory);
+      } catch (error) {
+        console.error('Error loading history from localStorage:', error);
+      }
+    }
   }, []);
 
   const showNotification = (
@@ -91,6 +104,18 @@ const Home: React.FC = () => {
     }
   };
 
+  const handleSelectHistoryItem = (item: QRHistoryItem) => {
+    setSelectedHistoryItem(item);
+    openHistoryModal();
+  };
+
+  const deleteHistoryItem = (id: number) => {
+    const updatedHistory = history.filter((item) => item.id !== id);
+    setHistory(updatedHistory);
+    localStorage.setItem('qrHistory', JSON.stringify(updatedHistory));
+    showNotification('History item deleted!');
+  };
+
   const saveToHistory = () => {
     if (!inputValue.trim()) return;
 
@@ -105,7 +130,7 @@ const Home: React.FC = () => {
 
     const updatedHistory = [newItem, ...history.slice(0, 9)];
     setHistory(updatedHistory);
-    // Note: localStorage would be used here in a real application
+    localStorage.setItem('qrHistory', JSON.stringify(updatedHistory));
   };
 
   const downloadQR = (format: string) => {
@@ -151,6 +176,7 @@ const Home: React.FC = () => {
 
   const clearHistory = () => {
     setHistory([]);
+    localStorage.removeItem('qrHistory');
     showNotification('History cleared!');
   };
 
@@ -235,7 +261,8 @@ const Home: React.FC = () => {
                 isOpen={isHistoryOpen}
                 history={history}
                 onClearHistory={clearHistory}
-                onLoadFromHistory={loadFromHistory}
+                onSelectHistoryItem={handleSelectHistoryItem}
+                // onLoadFromHistory={loadFromHistory}
                 hoverBgColor={hoverBgColor}
                 mutedColor={mutedColor}
               />
@@ -270,6 +297,13 @@ const Home: React.FC = () => {
         </Grid>
       </Container>
 
+      <HistoryModal
+        isOpen={isHistoryModalOpen}
+        onClose={closeHistoryModal}
+        item={selectedHistoryItem}
+        onLoad={loadFromHistory}
+        onDelete={deleteHistoryItem}
+      />
       <Footer
         borderColor={borderColor}
         cardBg={cardBg}
