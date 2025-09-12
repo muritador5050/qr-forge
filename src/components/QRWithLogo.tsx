@@ -62,7 +62,6 @@ const QRWithLogo: React.FC<{
             const logoX = (qrSize - logoSizePixels) / 2;
             const logoY = (qrSize - logoSizePixels) / 2;
 
-            // Create a white background circle slightly larger than logo
             const bgRadius = logoSizePixels / 2 + 8;
             ctx.fillStyle = bgColor;
             ctx.beginPath();

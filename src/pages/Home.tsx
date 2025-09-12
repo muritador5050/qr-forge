@@ -409,7 +409,7 @@ const Home: React.FC = () => {
   ];
 
   return (
-    <Box border='3px solid red' bg={bgColor} minH='100vh'>
+    <Box bg={bgColor} minH='100vh'>
       <Header
         colorMode={colorMode}
         onToggleColorMode={toggleColorMode}

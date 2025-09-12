@@ -72,7 +72,7 @@ const QRCodeDisplay: React.FC<QRCodeDisplayProps> = ({
           )}
 
           {/* QR Code */}
-          <Center>
+          <Center zIndex={1}>
             <Box ref={qrRef} p={4} borderRadius='lg' bg={bgColorQR}>
               {inputValue ? (
                 <QRWithLogo
