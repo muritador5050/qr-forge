@@ -1,4 +1,3 @@
-// Home.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import {
   Box,
@@ -14,7 +13,6 @@ import {
 import { Type, Link, Mail, Phone, Wifi, User } from 'lucide-react';
 import ContentTypeSelector from '../components/ContentTypeSelector';
 import ContentInput from '../components/ContentInput';
-import QRCodeDisplay from '../components/QrCodeDisplay';
 import SettingsPanel from '../components/SettingsPanel';
 import HistoryPanel from '../components/HistoryPanel';
 import ActionButtons from '../components/ActionButtons';
@@ -23,6 +21,7 @@ import Footer from '../components/Footer';
 import { InputType, QRHistoryItem, InputTypeOption } from '../types/index';
 import Header from '../components/Header';
 import HistoryModal from '../components/HistoryModal';
+import QRCodeDisplay from '../components/QRCodeDisplay';
 
 const Home: React.FC = () => {
   const { colorMode, toggleColorMode } = useColorMode();
