@@ -10,7 +10,7 @@ import {
   Text,
 } from '@chakra-ui/react';
 import { FileText } from 'lucide-react';
-import QRWithLogo from './QRwithLogo';
+import QRWithLogo from './QRWithLogo';
 
 interface QRCodeDisplayProps {
   inputValue: string;
